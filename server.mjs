@@ -6,6 +6,7 @@ import { createIphoneHandler } from "./iphone.mjs";
 
 const guideAssets = new Map([
   ["/guia/", ["guia.html", "text/html; charset=utf-8"]],
+  ["/lisboa/", ["lisboa.html", "text/html; charset=utf-8"]],
   ["/guia/style.css", ["style.css", "text/css; charset=utf-8"]],
   ["/guia/videos.js", ["videos.js", "text/javascript; charset=utf-8"]],
   ["/guia/escudo.png", ["escudo.png", "image/png"]],
@@ -77,8 +78,8 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
     try {
       const path = new URL(req.url, "http://localhost").pathname;
       if (await iphone(req, res, path)) return;
-      if (req.method === "GET" && path === "/guia") {
-        res.writeHead(302, { Location: "/guia/" });
+      if (req.method === "GET" && (path === "/guia" || path === "/lisboa")) {
+        res.writeHead(302, { Location: path + "/" });
         return res.end();
       }
       if ((req.method === "GET" || req.method === "HEAD") &&
