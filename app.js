@@ -21,6 +21,7 @@ function showLogin(message = "") {
   generation++;
   pending.clear();
   settings.hidden = true;
+  get("closed").hidden = true;
   get("login").hidden = false;
   get("feedback").textContent = message;
 }
@@ -31,7 +32,7 @@ function showPanel(expiry) {
   get("login").hidden = true;
   settings.hidden = false;
   get("expiry").textContent = "Key válida até " + new Date(expiry).toLocaleString("pt-BR");
-  get("accountStatus").textContent = "";
+  get("closed").hidden = true;
   draw();
 }
 async function request(path, payload) {
@@ -119,10 +120,15 @@ get("loginForm").onsubmit = async event => {
     showLogin(error.message || "Confira a conexão e tente novamente.");
   } finally { checking = false; button.disabled = false; button.textContent = "Validar e entrar"; }
 };
-get("logout").onclick = async () => {
-  try { await request("logout", {}); showLogin(); }
-  catch { get("accountStatus").textContent = "Não foi possível sair. Tente novamente."; }
+get("closeApp").onclick = () => {
+  allowed = false;
+  generation++;
+  pending.clear();
+  settings.hidden = true;
+  get("closed").hidden = false;
+  get("reopen").focus();
 };
+get("reopen").onclick = () => recheck(true);
 async function recheck(initial = false) {
   if ((!allowed && !initial) || checking) return;
   const version = generation;
