@@ -26,8 +26,10 @@ function render() {
     const item = el("article", "key-item");
     const head = el("div", "key-head");
     const title = el("div"); title.append(el("div", "key-name", key.label), el("div", "key-meta", "Final da key: •••• " + key.suffix));
-    if (key.is_reseller) title.append(el("div", "key-meta", "Revenda - Lisboa"));
-    head.append(title, el("span", "pill " + status, names[status]));
+    const badges = el("div");
+    if (key.is_reseller) badges.append(el("span", "pill expired", "Revenda - Lisboa"), document.createTextNode(" "));
+    badges.append(el("span", "pill " + status, names[status]));
+    head.append(title, badges);
     const details = el("div", "key-details");
     const expiry = el("div", "key-detail");
     const expiresAt = new Date(key.expires_at);
