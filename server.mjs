@@ -4,6 +4,15 @@ import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { createIphoneHandler } from "./iphone.mjs";
 
+const guideAssets = new Map([
+  ["/guia/", ["index.html", "text/html; charset=utf-8"]],
+  ["/guia/style.css", ["style.css", "text/css; charset=utf-8"]],
+  ["/guia/videos.js", ["videos.js", "text/javascript; charset=utf-8"]],
+  ["/guia/escudo.png", ["escudo.png", "image/png"]],
+  ["/guia/fundo.png", ["fundo.png", "image/png"]],
+  ["/guia/Zentrix-Android.apk", ["Zentrix-Android.apk", "application/vnd.android.package-archive"]]
+]);
+
 const uuid = /^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i;
 const keyFormat = /^(?:ZX|TA)-(?:[A-F\d]{8}-){3}[A-F\d]{8}$/;
 const hash = value => createHash("sha256").update(value).digest("hex");
@@ -68,6 +77,22 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
     try {
       const path = new URL(req.url, "http://localhost").pathname;
       if (await iphone(req, res, path)) return;
+      if (req.method === "GET" && path === "/guia") {
+        res.writeHead(302, { Location: "/guia/" });
+        return res.end();
+      }
+      if (req.method === "GET" && guideAssets.has(path)) {
+        const [file, type] = guideAssets.get(path);
+        const content = await readFile(new URL("./guia/" + file, import.meta.url));
+        res.writeHead(200, {
+          "Content-Type": type,
+          "Content-Length": content.length,
+          "X-Content-Type-Options": "nosniff",
+          "Content-Security-Policy": "default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self'; media-src 'self'; base-uri 'none'",
+          ...(file.endsWith(".apk") ? { "Content-Disposition": 'attachment; filename="Zentrix-Android.apk"' } : {})
+        });
+        return res.end(content);
+      }
       if (req.method === "GET" && path === "/health") return send(200, { ok: true });
       if (req.method === "GET" && ["/", "/admin.js"].includes(path)) {
         const script = path === "/admin.js";
