@@ -96,12 +96,18 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, fetchDb = fetch
         }
         if (req.method === "PATCH") {
           const input = await body(req);
-          if (typeof input?.id !== "string" || !uuid.test(input.id) || !["revoke", "reset"].includes(input.action)) {
+          if (typeof input?.id !== "string" || !uuid.test(input.id) || !["revoke", "unrevoke", "reset", "extend"].includes(input.action)) {
             return send(400, { error: "Ação inválida." });
           }
+          if (input.action === "extend") {
+            // Atomic extension in the database avoids overwriting concurrent changes.
+            const result = await db("rpc/team_araujo_extend_license", "POST", { p_id: input.id });
+            return result === true || result?.[0]?.team_araujo_extend_license === true
+              ? send(200, { ok: true }) : send(404, { error: "Key não encontrada." });
+          }
           const filter = input.action === "reset" ? "&revoked=eq.false&expires_at=gt.now" : "";
-          const rows = await db("team_araujo_app_licenses?select=id&id=eq." + input.id + filter, "PATCH",
-            input.action === "revoke" ? { revoked: true } : { device: null });
+          const patch = input.action === "revoke" ? { revoked: true } : input.action === "unrevoke" ? { revoked: false } : { device: null };
+          const rows = await db("team_araujo_app_licenses?select=id&id=eq." + input.id + filter, "PATCH", patch);
           return rows.length ? send(200, { ok: true }) : send(404, { error: "Key não encontrada ou encerrada." });
         }
       }
