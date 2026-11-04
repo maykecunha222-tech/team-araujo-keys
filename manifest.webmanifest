@@ -1,0 +1,11 @@
+{
+  "name": "Team Araujo - Zentrix",
+  "short_name": "Zentrix",
+  "id": "/iphone/",
+  "start_url": "/iphone/",
+  "scope": "/iphone/",
+  "display": "standalone",
+  "background_color": "#130e0b",
+  "theme_color": "#130e0b",
+  "icons": [{ "src": "/iphone/icon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" }]
+}

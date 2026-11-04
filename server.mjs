@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import { createHash, randomBytes, timingSafeEqual, createCipheriv, createDecipheriv } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import { createIphoneHandler } from "./iphone.mjs";
 
 const uuid = /^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i;
 const keyFormat = /^(?:ZX|TA)-(?:[A-F\d]{8}-){3}[A-F\d]{8}$/;
@@ -55,6 +56,7 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
     return result.status === 204 ? [] : result.json();
   }
 
+  const iphone = createIphoneHandler({ db, body, adminToken });
   return createServer(async (req, res) => {
     const send = (status, value) => {
       res.writeHead(status, {
@@ -65,6 +67,7 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
     };
     try {
       const path = new URL(req.url, "http://localhost").pathname;
+      if (await iphone(req, res, path)) return;
       if (req.method === "GET" && path === "/health") return send(200, { ok: true });
       if (req.method === "GET" && ["/", "/admin.js"].includes(path)) {
         const script = path === "/admin.js";
