@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { createIphoneHandler } from "./iphone.mjs";
 
 const guideAssets = new Map([
-  ["/guia/", ["index.html", "text/html; charset=utf-8"]],
+  ["/guia/", ["guia.html", "text/html; charset=utf-8"]],
   ["/guia/style.css", ["style.css", "text/css; charset=utf-8"]],
   ["/guia/videos.js", ["videos.js", "text/javascript; charset=utf-8"]],
   ["/guia/escudo.png", ["escudo.png", "image/png"]],
@@ -83,7 +83,7 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
       }
       if (req.method === "GET" && guideAssets.has(path)) {
         const [file, type] = guideAssets.get(path);
-        const content = await readFile(new URL("./guia/" + file, import.meta.url));
+        const content = await readFile(new URL("./" + file, import.meta.url));
         res.writeHead(200, {
           "Content-Type": type,
           "Content-Length": content.length,
