@@ -26,7 +26,7 @@ function render() {
     const item = el("article", "key-item");
     const head = el("div", "key-head");
     const title = el("div"); title.append(el("div", "key-name", key.label), el("div", "key-meta", "Final da key: •••• " + key.suffix));
-    if (key.is_reseller) title.append(el("div", "key-meta", "Plano de revenda"));
+    if (key.is_reseller) title.append(el("div", "key-meta", "Revenda - Lisboa"));
     head.append(title, el("span", "pill " + status, names[status]));
     const details = el("div", "key-details");
     const expiry = el("div", "key-detail");
@@ -100,7 +100,31 @@ async function reload() {
   render();
 }
 byId("loginForm").onsubmit = async event => { event.preventDefault(); token = byId("token").value.trim(); try { await reload(); byId("token").value = ""; byId("login").hidden = true; byId("panel").hidden = false; byId("logout").hidden = false; message(""); } catch (error) { token = ""; message(error.message); } };
-byId("generate").onsubmit = async event => { event.preventDefault(); const button = event.submitter; button.disabled = true; try { const plan = byId("hours").value; const isReseller = plan.startsWith("reseller-"); const result = await request("POST", { label: byId("label").value, hours: Number(plan.replace(/^reseller-/, "")), isReseller }); byId("newKey").querySelector("code").textContent = result.key; byId("newKey").hidden = false; await reload(); message("Key gerada. Você poderá consultá-la novamente em Mostrar key."); } catch (error) { message(error.message); } finally { button.disabled = false; } };
+for (const [formId, labelId, hoursId, isReseller] of [
+  ["generate", "label", "hours", false],
+  ["generateReseller", "resellerLabel", "resellerHours", true]
+]) {
+  byId(formId).onsubmit = async event => {
+    event.preventDefault();
+    const button = event.submitter;
+    button.disabled = true;
+    try {
+      const result = await request("POST", {
+        label: byId(labelId).value,
+        hours: Number(byId(hoursId).value),
+        isReseller
+      });
+      byId("newKey").querySelector("code").textContent = result.key;
+      byId("newKey").hidden = false;
+      await reload();
+      message("Key gerada. Você poderá consultá-la novamente em Mostrar key.");
+    } catch (error) {
+      message(error.message);
+    } finally {
+      button.disabled = false;
+    }
+  };
+}
 byId("copy").onclick = async () => { try { await navigator.clipboard.writeText(byId("newKey").querySelector("code").textContent); message("Key copiada."); } catch { message("Selecione a key e copie manualmente."); } };
 byId("logout").onclick = () => location.reload();
 byId("refresh").onclick = async () => { try { await reload(); message("Lista atualizada."); } catch (error) { message(error.message); } };
