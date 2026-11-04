@@ -1,6 +1,7 @@
 const byId = id => document.getElementById(id);
 let token = "";
 let rows = [];
+const reais = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 async function request(method = "GET", input) {
   const response = await fetch("/api/admin", { method, headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: input ? JSON.stringify(input) : undefined });
   const data = await response.json();
@@ -27,6 +28,7 @@ function render() {
     const title = el("div"); title.append(el("div", "key-name", key.label), el("div", "key-meta", "Final da key: •••• " + key.suffix));
     head.append(title, el("span", "pill " + status, names[status]));
     item.append(head, el("div", "key-meta", "Validade: " + formatDate(key.expires_at) + "  •  Criada: " + formatDate(key.created_at)));
+    if (key.price_cents != null) item.append(el("div", "key-meta", "Venda: " + reais.format(key.price_cents / 100) + " • " + formatDate(key.created_at)));
     if (key.last_seen) item.append(el("div", "key-meta", "Última validação: " + formatDate(key.last_seen)));
     const actions = el("div", "actions");
     const reveal = el("button", "small secondary", "Mostrar key");
@@ -78,7 +80,12 @@ function render() {
     item.append(actions); list.append(item);
   }
 }
-async function reload() { rows = (await request()).keys; render(); }
+async function reload() {
+  const data = await request();
+  rows = data.keys;
+  byId("statSales").textContent = reais.format(data.salesTotalCents / 100);
+  render();
+}
 byId("loginForm").onsubmit = async event => { event.preventDefault(); token = byId("token").value.trim(); try { await reload(); byId("token").value = ""; byId("login").hidden = true; byId("panel").hidden = false; byId("logout").hidden = false; message(""); } catch (error) { token = ""; message(error.message); } };
 byId("generate").onsubmit = async event => { event.preventDefault(); const button = event.submitter; button.disabled = true; try { const result = await request("POST", { label: byId("label").value, hours: Number(byId("hours").value) }); byId("newKey").querySelector("code").textContent = result.key; byId("newKey").hidden = false; await reload(); message("Key gerada. Você poderá consultá-la novamente em Mostrar key."); } catch (error) { message(error.message); } finally { button.disabled = false; } };
 byId("copy").onclick = async () => { try { await navigator.clipboard.writeText(byId("newKey").querySelector("code").textContent); message("Key copiada."); } catch { message("Selecione a key e copie manualmente."); } };

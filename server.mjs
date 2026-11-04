@@ -7,7 +7,7 @@ import { createIphoneHandler } from "./iphone.mjs";
 const uuid = /^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i;
 const keyFormat = /^(?:ZX|TA)-(?:[A-F\d]{8}-){3}[A-F\d]{8}$/;
 const hash = value => createHash("sha256").update(value).digest("hex");
-const publicFields = "id,suffix,label,created_at,expires_at,revoked,last_seen,key_encrypted";
+const publicFields = "id,suffix,label,created_at,expires_at,revoked,last_seen,key_encrypted,price_cents";
 function encryptKey(key, secret) {
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", Buffer.from(hash(secret), "hex"), iv);
@@ -101,7 +101,8 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
         }
         if (req.method === "GET") {
           const keys = await db("team_araujo_app_licenses?select=" + publicFields + "&order=created_at.desc&limit=500");
-          return send(200, { keys: keys.map(({ key_encrypted, ...row }) => ({ ...row, recoverable: Boolean(key_encrypted) })) });
+          const salesTotalCents = await db("rpc/team_araujo_license_sales_total", "POST", {});
+          return send(200, { salesTotalCents, keys: keys.map(({ key_encrypted, ...row }) => ({ ...row, recoverable: Boolean(key_encrypted) })) });
         }
         if (req.method === "POST") {
           const input = await body(req);
@@ -111,6 +112,7 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
           const key = "ZX-" + randomBytes(16).toString("hex").toUpperCase().match(/.{8}/g).join("-");
           const rows = await db("team_araujo_app_licenses?select=" + publicFields, "POST", {
             key_hash: hash(key), key_encrypted: encryptKey(key, encryptionSecret), suffix: key.slice(-8), label: input.label.trim() || "Sem identificação",
+            price_cents: ({ 336: 6000, 720: 10000 })[input.hours] ?? null,
             expires_at: new Date(Date.now() + input.hours * 3600000).toISOString()
           });
           return send(201, { key, id: rows[0].id });
@@ -165,3 +167,4 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
   });
   server.listen(Number(process.env.PORT || 3000), "0.0.0.0", () => console.log("Zentrix Keys online"));
 }
+
