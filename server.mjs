@@ -47,7 +47,11 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
     const result = await fetchDb(new URL("/rest/v1/" + path, supabaseUrl), {
       method, headers, signal: AbortSignal.timeout(8000), body: value === undefined ? undefined : JSON.stringify(value)
     });
-    if (!result.ok) throw new Error("Supabase HTTP " + result.status);
+    if (!result.ok) {
+  const details = await result.text();
+  console.error("Supabase HTTP", result.status, details);
+  throw new Error("Supabase HTTP " + result.status);
+}
     return result.status === 204 ? [] : result.json();
   }
 
