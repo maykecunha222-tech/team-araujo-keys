@@ -81,6 +81,34 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
         res.writeHead(302, { Location: "/guia/" });
         return res.end();
       }
+      if ((req.method === "GET" || req.method === "HEAD") &&
+          (path === "/guia/videos/iphone.mp4" || path === "/guia/videos/android.mp4")) {
+        const filename = path.endsWith("/iphone.mp4") ? "iphone.mp4" : "android.mp4";
+        const content = await readFile(new URL("./" + filename, import.meta.url)).catch(error => {
+          if (error.code === "ENOENT") return null;
+          throw error;
+        });
+        if (!content) return send(404, { error: "Vídeo indisponível." });
+
+        const headers = { "Content-Type": "video/mp4", "Accept-Ranges": "bytes" };
+        const range = req.headers.range;
+        if (range) {
+          const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+          const start = match?.[1] ? Number(match[1]) : Math.max(0, content.length - Number(match?.[2]));
+          const end = match?.[1] && match[2] ? Math.min(Number(match[2]), content.length - 1) : content.length - 1;
+          if (!match || (!match[1] && !match[2]) || start >= content.length || end < start) {
+            res.writeHead(416, { "Content-Range": "bytes */" + content.length });
+            return res.end();
+          }
+          res.writeHead(206, {
+            ...headers, "Content-Length": end - start + 1,
+            "Content-Range": "bytes " + start + "-" + end + "/" + content.length
+          });
+          return res.end(req.method === "HEAD" ? undefined : content.subarray(start, end + 1));
+        }
+        res.writeHead(200, { ...headers, "Content-Length": content.length });
+        return res.end(req.method === "HEAD" ? undefined : content);
+      }
       if (req.method === "GET" && guideAssets.has(path)) {
         const [file, type] = guideAssets.get(path);
         const content = await readFile(new URL("./" + file, import.meta.url));
