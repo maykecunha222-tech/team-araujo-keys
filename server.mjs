@@ -136,7 +136,9 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
           }
           if (input.action === "extend") {
             // Atomic extension in the database avoids overwriting concurrent changes.
-            const result = await db("rpc/team_araujo_extend_license", "POST", { p_id: input.id });
+            const days = input.days === undefined ? 30 : input.days;
+            if (![7, 14, 30].includes(days)) return send(400, { error: "Prazo inválido." });
+            const result = await db("rpc/team_araujo_extend_license", "POST", { p_id: input.id, p_days: days });
             return result === true || result?.[0]?.team_araujo_extend_license === true
               ? send(200, { ok: true }) : send(404, { error: "Key não encontrada." });
           }

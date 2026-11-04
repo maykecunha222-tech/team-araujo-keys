@@ -58,17 +58,19 @@ function render() {
     };
     actions.append(remove);
     const buttons = [
-      ["extend", "+30 dias", false, false],
+      ["extend", "+30 dias", false, false, 30],
+        ["extend", "+14 dias", false, false, 14],
+        ["extend", "+7 dias", false, false, 7],
       [key.revoked ? "unrevoke" : "revoke", key.revoked ? "Desbloquear" : "Bloquear", key.revoked ? false : true, false],
       ["reset", "Desvincular aparelho", false, status !== "active"]
     ];
-    for (const [action, label, danger, disabled] of buttons) {
+    for (const [action, label, danger, disabled, days] of buttons) {
       const button = el("button", "small " + (danger ? "danger" : "secondary"), label);
       button.type = "button"; button.disabled = disabled;
       button.onclick = async () => {
         if (!confirm(label + " a licença '" + key.label + "' (final " + key.suffix + ")?")) return;
         button.disabled = true;
-        try { await request("PATCH", { id: key.id, action }); await reload(); message("Operação concluída: " + label + "."); }
+        try { await request("PATCH", { id: key.id, action, days }); await reload(); message("Operação concluída: " + label + "."); }
         catch (error) { message(error.message); button.disabled = false; }
       };
       actions.append(button);
