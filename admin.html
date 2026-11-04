@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zentrix | Central de keys</title>
+<style>
+  *{box-sizing:border-box}body{margin:0;background:#0e0c0b;color:#f6ede2;font:15px system-ui}
+  main{max-width:760px;margin:auto;padding:42px 20px}small{color:#efac61;letter-spacing:.13em}
+  h1{font-size:36px;margin:.3em 0}p{color:#c4b5a5}section{border:1px solid #443529;background:#201914;border-radius:16px;padding:20px;margin-top:18px}
+  form{display:grid;gap:10px}input,select,button{font:inherit;padding:10px;border:1px solid #604a37;border-radius:8px}
+  input,select{background:#130f0c;color:#f6ede2;width:100%}button{cursor:pointer;background:#efac61;color:#24160b}
+  button:disabled{opacity:.5;cursor:default}code{overflow-wrap:anywhere;color:#ffcd90}li{padding:12px 0;border-bottom:1px solid #443529}
+  li button{margin:8px 8px 0 0}#message{min-height:1.2em}
+</style>
+<main>
+  <small>TEAM ARAUJO / ZENTRIX</small>
+  <h1>Central de keys</h1>
+  <section id="login">
+    <form id="loginForm">
+      <label for="token">Token do administrador</label>
+      <input id="token" type="password" autocomplete="off" required>
+      <button>Entrar</button>
+    </form>
+  </section>
+  <div id="panel" hidden>
+    <section>
+      <form id="generate">
+        <label for="label">Identificação</label><input id="label" maxlength="80">
+        <label for="hours">Validade a partir da criação</label>
+        <select id="hours"><option value="1">1 hora</option><option value="24" selected>24 horas</option><option value="168">7 dias</option><option value="720">30 dias</option></select>
+        <button>Gerar key</button>
+      </form>
+      <p id="newKey" hidden><code></code> <button id="copy">Copiar</button></p>
+    </section>
+    <section><h2>Keys emitidas</h2><ul id="keys"></ul><button id="logout">Sair</button></section>
+  </div>
+  <p id="message" role="status" aria-live="polite"></p>
+</main>
+<script src="/admin.js" defer></script>
+</html>
