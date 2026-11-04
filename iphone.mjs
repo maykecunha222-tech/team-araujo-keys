@@ -44,7 +44,7 @@ export function createIphoneHandler({ db, body, adminToken }) {
     const cookies = Object.fromEntries((req.headers.cookie || "").split(";").map(part => part.trim().split("=", 2)));
     const asset = assets[path];
     if (req.method === "GET" && asset) {
-      const content = await readFile(new URL("./iphone/" + asset[0], import.meta.url));
+      const content = await readFile(new URL("./" + asset[0], import.meta.url));
       res.writeHead(200, {
         "Content-Type": asset[1], "Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff",
         ...(path === "/iphone/" && !uuid.test(cookies.zx_ios_device || "") ?
