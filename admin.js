@@ -29,6 +29,34 @@ function render() {
     item.append(head, el("div", "key-meta", "Validade: " + formatDate(key.expires_at) + "  •  Criada: " + formatDate(key.created_at)));
     if (key.last_seen) item.append(el("div", "key-meta", "Última validação: " + formatDate(key.last_seen)));
     const actions = el("div", "actions");
+    const reveal = el("button", "small secondary", "Mostrar key");
+    reveal.type = "button";
+    reveal.disabled = !key.recoverable;
+    reveal.title = key.recoverable ? "Consultar chave completa" : "Key antiga: o banco só possui seu hash";
+    reveal.onclick = async () => {
+      reveal.disabled = true;
+      try {
+        const data = await request("PUT", { id: key.id });
+        const code = el("code", "full-key", data.key);
+        const copy = el("button", "small secondary", "Copiar");
+        copy.type = "button";
+        copy.onclick = async () => { await navigator.clipboard.writeText(data.key); message("Key copiada."); };
+        const detail = el("div", "revealed-key"); detail.append(code, copy);
+        const old = item.querySelector(".revealed-key"); if (old) old.remove();
+        item.insertBefore(detail, actions);
+      } catch (error) { message(error.message); }
+      finally { reveal.disabled = false; }
+    };
+    actions.append(reveal);
+    const remove = el("button", "small danger", "Apagar key");
+    remove.type = "button";
+    remove.onclick = async () => {
+      if (!confirm("APAGAR DEFINITIVAMENTE a licença '" + key.label + "' (final " + key.suffix + ")? Ela deixará de funcionar.")) return;
+      remove.disabled = true;
+      try { await request("DELETE", { id: key.id }); await reload(); message("Key apagada definitivamente."); }
+      catch (error) { message(error.message); remove.disabled = false; }
+    };
+    actions.append(remove);
     const buttons = [
       ["extend", "+30 dias", false, false],
       [key.revoked ? "unrevoke" : "revoke", key.revoked ? "Desbloquear" : "Bloquear", key.revoked ? false : true, false],
@@ -50,7 +78,7 @@ function render() {
 }
 async function reload() { rows = (await request()).keys; render(); }
 byId("loginForm").onsubmit = async event => { event.preventDefault(); token = byId("token").value.trim(); try { await reload(); byId("token").value = ""; byId("login").hidden = true; byId("panel").hidden = false; byId("logout").hidden = false; message(""); } catch (error) { token = ""; message(error.message); } };
-byId("generate").onsubmit = async event => { event.preventDefault(); const button = event.submitter; button.disabled = true; try { const result = await request("POST", { label: byId("label").value, hours: Number(byId("hours").value) }); byId("newKey").querySelector("code").textContent = result.key; byId("newKey").hidden = false; await reload(); message("Key gerada. Copie e guarde a chave agora."); } catch (error) { message(error.message); } finally { button.disabled = false; } };
+byId("generate").onsubmit = async event => { event.preventDefault(); const button = event.submitter; button.disabled = true; try { const result = await request("POST", { label: byId("label").value, hours: Number(byId("hours").value) }); byId("newKey").querySelector("code").textContent = result.key; byId("newKey").hidden = false; await reload(); message("Key gerada. Você poderá consultá-la novamente em Mostrar key."); } catch (error) { message(error.message); } finally { button.disabled = false; } };
 byId("copy").onclick = async () => { try { await navigator.clipboard.writeText(byId("newKey").querySelector("code").textContent); message("Key copiada."); } catch { message("Selecione a key e copie manualmente."); } };
 byId("logout").onclick = () => location.reload();
 byId("refresh").onclick = async () => { try { await reload(); message("Lista atualizada."); } catch (error) { message(error.message); } };

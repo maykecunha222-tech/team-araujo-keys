@@ -21,3 +21,12 @@ O painel pode bloquear a key ou desfazer o vínculo. As chaves completas aparece
 - A extensão soma 30 dias ao vencimento atual ou, se a key estiver expirada, a partir do momento da extensão. Uma key bloqueada permanece bloqueada até ser desbloqueada.
 - As chaves já existentes permanecem no Supabase; não apague a tabela.
 - O painel lista no máximo 500 keys recentes, como na versão original.
+
+## Mostrar e apagar keys
+
+1. Execute `supabase/recoverable_keys.sql` no SQL Editor do Supabase.
+2. Configure `KEY_ENCRYPTION_SECRET` no Render com uma string aleatória e privada de pelo menos 32 caracteres. **Não altere esse segredo depois**, pois as novas keys salvas deixariam de ser recuperáveis. Não publique o segredo no GitHub.
+3. Publique o código no GitHub conectado ao Render.
+4. O botão **Mostrar key** revela keys criadas após esta atualização, mediante autenticação administrativa. Keys antigas foram salvas apenas como hash SHA-256 e **não podem ser recuperadas**.
+5. O botão **Apagar key** exclui definitivamente o registro e invalida a licença.
+6. As keys ficam cifradas no banco usando AES-256-GCM, e a API pública de validação nunca devolve a chave.
