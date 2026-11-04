@@ -37,7 +37,7 @@ async function body(req) {
 }
 
 export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecret, fetchDb = fetch }) {
-  if (new URL(supabaseUrl).protocol !== "https:" || !secretKey || !adminToken || adminToken.length < 32 || !encryptionSecret || encryptionSecret.length < 32) {
+  if (new URL(supabaseUrl).protocol !== "https:" || !secretKey || !adminToken || !encryptionSecret || encryptionSecret.length < 32) {
     throw new Error("Configure SUPABASE_URL, SUPABASE_SECRET_KEY e ADMIN_TOKEN e KEY_ENCRYPTION_SECRET (mínimo 32 caracteres).");
   }
   const adminHash = Buffer.from(hash(adminToken), "hex");
