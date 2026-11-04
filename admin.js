@@ -27,8 +27,20 @@ function render() {
     const head = el("div", "key-head");
     const title = el("div"); title.append(el("div", "key-name", key.label), el("div", "key-meta", "Final da key: •••• " + key.suffix));
     head.append(title, el("span", "pill " + status, names[status]));
-    item.append(head, el("div", "key-meta", "Validade: " + formatDate(key.expires_at) + "  •  Criada: " + formatDate(key.created_at)));
-    if (key.price_cents != null) item.append(el("div", "key-meta", "Venda: " + reais.format(key.price_cents / 100) + " • " + formatDate(key.created_at)));
+    const details = el("div", "key-details");
+    const expiry = el("div", "key-detail");
+    const expiresAt = new Date(key.expires_at);
+    expiry.append(el("span", "", status === "expired" ? "Expirou em" : "Expira em"),
+      el("strong", "", expiresAt.toLocaleDateString("pt-BR")),
+      el("small", "", expiresAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })));
+    details.append(expiry);
+    if (key.price_cents != null) {
+      const sale = el("div", "key-detail key-detail-sale");
+      sale.append(el("span", "", "Valor da venda"), el("strong", "", reais.format(key.price_cents / 100)));
+      details.append(sale);
+    }
+    item.append(head, details, el("div", "key-meta",
+      (key.price_cents == null ? "Criada: " : "Venda registrada em: ") + formatDate(key.created_at)));
     if (key.last_seen) item.append(el("div", "key-meta", "Última validação: " + formatDate(key.last_seen)));
     const actions = el("div", "actions");
     const reveal = el("button", "small secondary", "Mostrar key");
