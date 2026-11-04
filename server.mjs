@@ -7,7 +7,7 @@ import { createIphoneHandler } from "./iphone.mjs";
 const uuid = /^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i;
 const keyFormat = /^(?:ZX|TA)-(?:[A-F\d]{8}-){3}[A-F\d]{8}$/;
 const hash = value => createHash("sha256").update(value).digest("hex");
-const publicFields = "id,suffix,label,created_at,expires_at,revoked,last_seen,key_encrypted,price_cents";
+const publicFields = "id,suffix,label,created_at,expires_at,revoked,last_seen,key_encrypted,price_cents,is_reseller";
 function encryptKey(key, secret) {
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", Buffer.from(hash(secret), "hex"), iv);
@@ -109,10 +109,16 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
           if (![1, 24, 168, 336, 720].includes(input?.hours) || typeof input?.label !== "string" || input.label.length > 80) {
             return send(400, { error: "Confira a identificação e a validade." });
           }
+          const isReseller = input.isReseller ?? false;
+          if (typeof isReseller !== "boolean" || (isReseller && ![336, 720].includes(input.hours))) {
+            return send(400, { error: "Plano de revenda inválido." });
+          }
+          const prices = isReseller ? { 336: 4000, 720: 7000 } : { 336: 6000, 720: 10000 };
           const key = "ZX-" + randomBytes(16).toString("hex").toUpperCase().match(/.{8}/g).join("-");
           const rows = await db("team_araujo_app_licenses?select=" + publicFields, "POST", {
             key_hash: hash(key), key_encrypted: encryptKey(key, encryptionSecret), suffix: key.slice(-8), label: input.label.trim() || "Sem identificação",
-            price_cents: ({ 336: 6000, 720: 10000 })[input.hours] ?? null,
+            is_reseller: isReseller,
+            price_cents: prices[input.hours] ?? null,
             expires_at: new Date(Date.now() + input.hours * 3600000).toISOString()
           });
           return send(201, { key, id: rows[0].id });
