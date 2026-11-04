@@ -105,7 +105,7 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
         }
         if (req.method === "POST") {
           const input = await body(req);
-          if (![1, 24, 168, 720].includes(input?.hours) || typeof input?.label !== "string" || input.label.length > 80) {
+          if (![1, 24, 168, 336, 720].includes(input?.hours) || typeof input?.label !== "string" || input.label.length > 80) {
             return send(400, { error: "Confira a identificação e a validade." });
           }
           const key = "ZX-" + randomBytes(16).toString("hex").toUpperCase().match(/.{8}/g).join("-");
