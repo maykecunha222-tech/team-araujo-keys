@@ -19,10 +19,20 @@ function showOrder() {
   form.hidden = true;
   element("order").hidden = false;
   element("payment").hidden = false;
-  element("pix").value = order.pix;
-  element("pix-reference").hidden = !order.txid;
+  const directKey = order.manual && typeof order.pixKey === "string" && Number.isInteger(order.amount);
+  element("pix").value = directKey ? order.pixKey : order.pix;
+  element("pix").rows = directKey ? 1 : 3;
+  element("pix-label").textContent = directKey ? "Chave Pix" : "Pix Copia e Cola";
+  element("copy-pix").textContent = directKey ? "Copiar chave Pix" : "Copiar Pix";
+  element("pix-amount").hidden = !directKey;
+  if (directKey) {
+    const value = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(order.amount / 100);
+    element("pix-amount").textContent = "No app do banco, escolha Pix por chave e digite o valor exato de " + value + ".";
+  }
+  element("pix-reference").hidden = directKey || !order.txid;
   element("pix-reference").textContent = order.txid ? "Referência do Pix: " + order.txid : "";
-  if (typeof order.qr === "string") {
+  element("qr").hidden = true;
+  if (!directKey && typeof order.qr === "string") {
     const qr = order.qr.replace(/^data:image\/png;base64[,.]/, "");
     if (/^[A-Za-z0-9+/]+={0,2}$/.test(qr)) {
       element("qr").src = "data:image/png;base64," + qr;

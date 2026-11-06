@@ -35,7 +35,7 @@ export function createManualPix({ key, name, city }) {
         field("58", "BR") + field("59", receiver) + field("60", location) + field("62", field("05", txid)) + "6304";
       const pix = payload + crc16(payload);
       const qr = await QRCode.toDataURL(pix, { width: 360 });
-      return { pix, qr, txid };
+      return { pix, qr, txid, pixKey, amount };
     }
   };
 }
