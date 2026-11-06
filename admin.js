@@ -27,7 +27,7 @@ function render() {
     const head = el("div", "key-head");
     const title = el("div"); title.append(el("div", "key-name", key.label), el("div", "key-meta", "Final da key: •••• " + key.suffix));
     const badges = el("div");
-    if (key.is_reseller) badges.append(el("span", "pill expired", "Revenda - Lisboa"), document.createTextNode(" "));
+    if (key.is_reseller) badges.append(el("span", "pill expired", "Revenda"), document.createTextNode(" "));
     badges.append(el("span", "pill " + status, names[status]));
     head.append(title, badges);
     const details = el("div", "key-details");
