@@ -19,4 +19,19 @@
     <button type="submit">+ Gerar licença de revenda</button>
   </form>
 </div>
-<div id="newKey" class="newkey" hidden><p>Key criada. Ela também poderá ser consultada na lista.</p><code></code><button id="copy" class="secondary small" type="button">Copiar key</button></div></section><section class="card"><div class="top" style="margin-bottom:14px"><h2 style="margin:0">Licenças emitidas</h2><button id="refresh" class="secondary small" type="button">↻ Atualizar</button></div><div class="toolbar"><input id="search" aria-label="Pesquisar keys" placeholder="Buscar por nome ou final da key"><select id="filter" aria-label="Filtrar por status"><option value="all">Todos os status</option><option value="active">Ativas</option><option value="blocked">Bloqueadas</option><option value="expired">Expiradas</option></select></div><div id="keys" class="key-list"></div></section></div></div><p id="message" class="notice" role="status" aria-live="polite"></p></main><script src="/admin.js" defer></script></body></html>
+<details id="reseller-management" class="reseller-form">
+  <summary>Contas de revendedores</summary>
+  <p class="muted">Crie um acesso e envie o token em privado junto com o endereço /revendedores.</p>
+  <form id="add-reseller" class="form-grid">
+    <div><label for="reseller-name">Nome do revendedor</label><input id="reseller-name" maxlength="80" required></div>
+    <button type="submit">Criar acesso</button>
+  </form>
+  <div id="reseller-access" class="newkey" hidden><p>Copie o token agora para enviar ao revendedor.</p><code></code><button type="button" id="copy-reseller-access">Copiar token</button></div>
+  <div id="reseller-accounts"></div>
+</details>
+<details id="pix-receipts-panel" class="reseller-form">
+  <summary>Comprovantes Pix</summary>
+  <button type="button" class="small secondary" id="pix-receipts-refresh">Atualizar comprovantes</button>
+  <div id="pix-receipts-list"></div>
+</details>
+<div id="newKey" class="newkey" hidden><p>Key criada. Ela também poderá ser consultada na lista.</p><code></code><button id="copy" class="secondary small" type="button">Copiar key</button></div></section><section class="card"><div class="top" style="margin-bottom:14px"><h2 style="margin:0">Licenças emitidas</h2><button id="refresh" class="secondary small" type="button">↻ Atualizar</button></div><div class="toolbar"><input id="search" aria-label="Pesquisar keys" placeholder="Buscar por nome ou final da key"><select id="filter" aria-label="Filtrar por status"><option value="all">Todos os status</option><option value="active">Ativas</option><option value="blocked">Bloqueadas</option><option value="expired">Expiradas</option></select></div><div id="keys" class="key-list"></div></section></div></div><p id="message" class="notice" role="status" aria-live="polite"></p></main><script src="/admin.js" defer></script><script src="/revenda-admin.js" defer></script><script src="/pix-admin.js" defer></script></body></html>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Revendedores · Zentrix Keys</title>
+  <script src="/loja.js" defer></script><script src="/revenda.js" defer></script>
+  <style>
+    :root{color-scheme:dark;font:16px system-ui,sans-serif;background:#101012;color:#f7f2e7}
+    main{max-width:34rem;margin:3rem auto;padding:0 1rem}
+    h1{margin:.5rem 0}.brand{color:#f1ca70;font-weight:700;letter-spacing:.12em}
+    p{line-height:1.5} form,section{background:#1c1c20;border:1px solid #383533;border-radius:1rem;padding:1.25rem}
+    label{display:block;margin:.75rem 0}input,select,textarea,button{font:inherit;box-sizing:border-box}
+    input,select,textarea{width:100%;margin:.3rem 0;padding:.7rem;border:1px solid #645b4b;border-radius:.5rem;background:#111}
+    button{background:#f1ca70;color:#16110a;border:0;border-radius:.5rem;padding:.75rem 1rem;font-weight:700;cursor:pointer}
+    button:disabled{opacity:.55;cursor:wait} img{display:block;width:14rem;max-width:100%;margin:1rem auto} [hidden]{display:none!important}
+    li{margin-bottom:1rem;overflow-wrap:anywhere} li button{margin-left:.5rem} #reseller-panel>section{margin-top:1rem}
+    output{display:block;margin:.6rem 0;overflow-wrap:anywhere;font:700 1.1rem monospace}
+  </style>
+</head>
+<body>
+<main>
+  <span class="brand">ZENTRIX KEYS</span>
+  <h1>Painel de revendedores</h1>
+<form id="reseller-login">
+  <label>Token de revendedor <input id="reseller-token" type="password" maxlength="67" required></label>
+  <button>Entrar</button>
+</form>
+<p id="reseller-error" role="status"></p>
+<div id="reseller-panel" hidden>
+  <h2 id="welcome"></h2>
+  <button id="reseller-logout" type="button">Sair</button>
+  <h2>Comprar key</h2>
+  <p>Pague por Pix e receba a key nesta página após a confirmação.</p>
+  <form id="purchase" data-reseller="true">
+    <label>Plano
+      <select name="hours">
+        <option value="336">14 dias · R$ 40,00</option>
+        <option value="720">30 dias · R$ 70,00</option>
+      </select>
+    </label>
+    <label id="buyer-name-field" hidden>Seu nome <input name="buyerName" autocomplete="name" maxlength="80" disabled></label>
+    <fieldset id="customer-data" style="border:0;padding:0;margin:0">
+    <label>Nome completo <input name="name" autocomplete="name" maxlength="255" required></label>
+    <label>E-mail <input name="email" type="email" autocomplete="email" maxlength="254" required></label>
+    <label>CPF <input name="cpf" inputmode="numeric" maxlength="14" required></label>
+    <label>Celular com DDD <input name="phone" type="tel" autocomplete="tel-national" maxlength="16" required></label>
+    <p>Esses dados são enviados ao PicPay para criar a cobrança.</p>
+    </fieldset>
+    <button>Gerar Pix</button>
+  </form>
+  <p id="status" role="status"></p>
+  <section id="order" hidden aria-label="Seu pedido">
+    <div id="payment" hidden>
+      <p id="pix-reference" hidden></p>
+      <img id="qr" alt="QR Code Pix" hidden>
+      <label>Pix Copia e Cola <textarea id="pix" readonly rows="3"></textarea></label>
+      <button id="copy-pix" type="button">Copiar Pix</button>
+    </div>
+    <form id="receipt-form" hidden>
+      <label>Imagem do comprovante <input id="receipt-image" type="file" accept="image/png,image/jpeg" required></label>
+      <p>PNG ou JPG de até 2 MB. No Pix por chave, a key é liberada após o envio da imagem.</p>
+      <button type="submit">Enviar comprovante</button>
+      <p id="receipt-error" role="status"></p>
+    </form>
+    <div id="delivery" hidden>
+      <strong>Sua key</strong>
+      <output id="key"></output>
+      <button id="copy-key" type="button">Copiar key</button>
+    </div>
+    <p><button id="reset" type="button" hidden>Voltar à loja</button></p>
+  </section>
+  <section aria-label="Keys compradas">
+    <h2>Minhas keys</h2>
+    <button id="refresh-keys" type="button">Atualizar</button>
+    <p id="empty-keys">Você ainda não tem keys.</p>
+    <ul id="reseller-keys"></ul>
+    <button id="more-keys" type="button" hidden>Carregar mais</button>
+  </section>
+</div>
+</main>
+</body>
+</html>

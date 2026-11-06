@@ -2,8 +2,8 @@ const byId = id => document.getElementById(id);
 let token = "";
 let rows = [];
 const reais = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-async function request(method = "GET", input) {
-  const response = await fetch("/api/admin", { method, headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: input ? JSON.stringify(input) : undefined });
+async function request(method = "GET", input, endpoint = "/api/admin") {
+  const response = await fetch(endpoint, { method, headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: input ? JSON.stringify(input) : undefined });
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || "Não foi possível concluir a operação.");
   return data;

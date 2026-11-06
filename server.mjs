@@ -3,6 +3,9 @@ import { createHash, randomBytes, timingSafeEqual, createCipheriv, createDeciphe
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { createIphoneHandler } from "./iphone.mjs";
+import { createCheckout, createPicPay, retailPrices, resellerPrices } from "./checkout.mjs";
+import { createResellerPanel, findReseller } from "./revenda.mjs";
+import { createManualPix, createReceiptAdmin } from "./pix-manual.mjs";
 
 const guideAssets = new Map([
   ["/guia/", ["guia.html", "text/html; charset=utf-8"]],
@@ -47,7 +50,7 @@ async function body(req) {
   catch { throw Object.assign(new Error("Pedido inválido."), { status: 400 }); }
 }
 
-export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecret, fetchDb = fetch }) {
+export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecret, payment, manualPix, fetchDb = fetch }) {
   if (new URL(supabaseUrl).protocol !== "https:" || !secretKey || !adminToken || !encryptionSecret || encryptionSecret.length < 32) {
     throw new Error("Configure SUPABASE_URL, SUPABASE_SECRET_KEY e ADMIN_TOKEN e KEY_ENCRYPTION_SECRET (mínimo 32 caracteres).");
   }
@@ -61,11 +64,26 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
     if (!result.ok) {
   const details = await result.text();
   console.error("Supabase HTTP", result.status, details);
-  throw new Error("Supabase HTTP " + result.status);
+  throw Object.assign(new Error("Supabase HTTP " + result.status), { dbStatus: result.status });
 }
     return result.status === 204 ? [] : result.json();
   }
 
+  function isAdmin(req) {
+    const authorization = req.headers.authorization || "";
+    const provided = Buffer.from(hash(authorization.replace(/^Bearer /, "")), "hex");
+    return authorization.startsWith("Bearer ") && timingSafeEqual(provided, adminHash);
+  }
+  const receipts = createReceiptAdmin({ db, body, isAdmin });
+  const resellerPanel = createResellerPanel({
+    db, body, hash, isAdmin, decryptKey: value => decryptKey(value, encryptionSecret)
+  });
+  const checkout = createCheckout({
+    findReseller: token => findReseller(db, hash, token),
+    db, body, hash, payment, manualPix,
+    encryptKey: key => encryptKey(key, encryptionSecret),
+    decryptKey: value => decryptKey(value, encryptionSecret)
+  });
   const iphone = createIphoneHandler({ db, body, adminToken });
   return createServer(async (req, res) => {
     const send = (status, value) => {
@@ -77,6 +95,9 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
     };
     try {
       const path = new URL(req.url, "http://localhost").pathname;
+      if (await receipts(req, res, path, send)) return;
+      if (await resellerPanel(req, res, path, send)) return;
+      if (await checkout(req, res, path, send)) return;
       if (await iphone(req, res, path)) return;
       if (req.method === "GET" && (path === "/guia" || path === "/lisboa")) {
         res.writeHead(302, { Location: path + "/" });
@@ -123,13 +144,13 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
         return res.end(content);
       }
       if (req.method === "GET" && path === "/health") return send(200, { ok: true });
-      if (req.method === "GET" && ["/", "/admin.js"].includes(path)) {
-        const script = path === "/admin.js";
-        const content = await readFile(new URL(script ? "./admin.js" : "./admin.html", import.meta.url));
+      if (req.method === "GET" && ["/", "/admin.js", "/revenda-admin.js", "/pix-admin.js"].includes(path)) {
+        const script = path !== "/";
+        const content = await readFile(new URL(script ? "." + path : "./admin.html", import.meta.url));
         res.writeHead(200, {
           "Content-Type": script ? "text/javascript; charset=utf-8" : "text/html; charset=utf-8",
           "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
-          "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+          "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; img-src data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
         });
         return res.end(content);
       }
@@ -148,9 +169,7 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
         return send(200, { valid: true, expiresAt, serverTime });
       }
       if (path === "/api/admin") {
-        const authorization = req.headers.authorization || "";
-        const provided = Buffer.from(hash(authorization.replace(/^Bearer /, "")), "hex");
-        if (!authorization.startsWith("Bearer ") || !timingSafeEqual(provided, adminHash)) {
+        if (!isAdmin(req)) {
           return send(403, { error: "Acesso exclusivo do administrador." });
         }
         if (req.method === "GET") {
@@ -167,7 +186,7 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
           if (typeof isReseller !== "boolean" || (isReseller && ![336, 720].includes(input.hours))) {
             return send(400, { error: "Plano de revenda inválido." });
           }
-          const prices = isReseller ? { 336: 4000, 720: 7000 } : { 336: 6000, 720: 10000 };
+          const prices = isReseller ? resellerPrices : retailPrices;
           const key = "ZX-" + randomBytes(16).toString("hex").toUpperCase().match(/.{8}/g).join("-");
           const rows = await db("team_araujo_app_licenses?select=" + publicFields, "POST", {
             key_hash: hash(key), key_encrypted: encryptKey(key, encryptionSecret), suffix: key.slice(-8), label: input.label.trim() || "Sem identificação",
@@ -223,7 +242,15 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
     supabaseUrl: process.env.SUPABASE_URL,
     secretKey: process.env.SUPABASE_SECRET_KEY,
     adminToken: process.env.ADMIN_TOKEN,
-    encryptionSecret: process.env.KEY_ENCRYPTION_SECRET
+    encryptionSecret: process.env.KEY_ENCRYPTION_SECRET,
+    manualPix: process.env.PIX_KEY ? createManualPix({
+      key: process.env.PIX_KEY, name: process.env.PIX_RECEIVER_NAME, city: process.env.PIX_RECEIVER_CITY
+    }) : undefined,
+    payment: !process.env.PIX_KEY && process.env.PICPAY_ENV ? createPicPay({
+      environment: process.env.PICPAY_ENV,
+      clientId: process.env.PICPAY_CLIENT_ID,
+      clientSecret: process.env.PICPAY_CLIENT_SECRET
+    }) : undefined
   });
   server.listen(Number(process.env.PORT || 3000), "0.0.0.0", () => console.log("Zentrix Keys online"));
 }
