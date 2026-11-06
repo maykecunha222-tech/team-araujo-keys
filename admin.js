@@ -18,7 +18,7 @@ function render() {
   for (const [id, status] of [["statActive", "active"], ["statBlocked", "blocked"], ["statExpired", "expired"]]) byId(id).textContent = rows.filter(k => statusOf(k) === status).length;
   const term = byId("search").value.trim().toLowerCase();
   const filter = byId("filter").value;
-  const filtered = rows.filter(k => (filter === "all" || statusOf(k) === filter) && (k.label.toLowerCase().includes(term) || k.suffix.toLowerCase().includes(term)));
+  const filtered = rows.filter(k => (filter === "all" || statusOf(k) === filter) && (k.label.toLowerCase().includes(term) || k.suffix.toLowerCase().includes(term) || (k.reseller_name || "").toLowerCase().includes(term)));
   const list = byId("keys"); list.replaceChildren();
   if (!filtered.length) { list.append(el("div", "empty", "Nenhuma licença encontrada.")); return; }
   for (const key of filtered) {
@@ -26,6 +26,9 @@ function render() {
     const item = el("article", "key-item");
     const head = el("div", "key-head");
     const title = el("div"); title.append(el("div", "key-name", key.label), el("div", "key-meta", "Final da key: •••• " + key.suffix));
+    if (key.is_reseller) {
+      title.append(el("div", "key-meta", key.reseller_name ? "Revendedor: " + key.reseller_name : "Sem conta de revendedor vinculada"));
+    }
     const badges = el("div");
     if (key.is_reseller) badges.append(el("span", "pill expired", "Revenda"), document.createTextNode(" "));
     badges.append(el("span", "pill " + status, names[status]));

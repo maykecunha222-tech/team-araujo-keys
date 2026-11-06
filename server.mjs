@@ -173,9 +173,9 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
           return send(403, { error: "Acesso exclusivo do administrador." });
         }
         if (req.method === "GET") {
-          const keys = await db("team_araujo_app_licenses?select=" + publicFields + "&order=created_at.desc&limit=500");
+          const keys = await db("team_araujo_app_licenses?select=" + publicFields + ",zentrix_resellers(name)&order=created_at.desc&limit=500");
           const salesTotalCents = await db("rpc/team_araujo_license_sales_total", "POST", {});
-          return send(200, { salesTotalCents, keys: keys.map(({ key_encrypted, ...row }) => ({ ...row, recoverable: Boolean(key_encrypted) })) });
+          return send(200, { salesTotalCents, keys: keys.map(({ key_encrypted, zentrix_resellers, ...row }) => ({ ...row, reseller_name: zentrix_resellers?.name ?? null, recoverable: Boolean(key_encrypted) })) });
         }
         if (req.method === "POST") {
           const input = await body(req);
