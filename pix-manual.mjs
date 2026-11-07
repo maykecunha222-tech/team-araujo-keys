@@ -87,7 +87,7 @@ export function createReceiptAdmin({ db, body, isAdmin }) {
         send(receipt ? 200 : 404, receipt || { error: "Comprovante indisponível." });
         return true;
       }
-      const receipts = await db(table + "?select=order_id,created_at,zentrix_orders(amount,hours,reseller_id,buyer_name,license_id)&status=eq.review&order=created_at.asc&limit=100");
+      const receipts = await db(table + "?select=order_id,created_at,mime,zentrix_orders(amount,hours,reseller_id,buyer_name,license_id)&status=eq.review&order=created_at.asc&limit=100");
       send(200, { receipts: receipts.map(receipt => ({ ...receipt, reference: pixReference(receipt.order_id) })) });
       return true;
     }

@@ -48,8 +48,8 @@
       <button id="copy-pix" type="button">Copiar Pix</button>
     </div>
     <form id="receipt-form" hidden>
-      <label>Imagem do comprovante <input id="receipt-image" type="file" accept="image/png,image/jpeg" required></label>
-      <p>PNG ou JPG de até 2 MB. A key fica disponível após a conferência.</p>
+      <label>Imagem do comprovante <input id="receipt-image" type="file" accept="image/*" required></label>
+      <p>Selecione uma foto ou um print legível do comprovante. A key fica disponível após a conferência.</p>
       <button type="submit">Enviar comprovante</button>
       <p id="receipt-error" role="status"></p>
     </form>

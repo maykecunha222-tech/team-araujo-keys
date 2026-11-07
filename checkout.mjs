@@ -90,7 +90,7 @@ export function createCheckout({ db, body, hash, encryptKey, decryptKey, payment
         "Content-Type": type + "; charset=utf-8",
         "X-Content-Type-Options": "nosniff",
         "Referrer-Policy": "no-referrer",
-        "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
+        "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
       });
       res.end(content);
       return true;
@@ -146,7 +146,7 @@ export function createCheckout({ db, body, hash, encryptKey, decryptKey, payment
       return true;
     }
 
-    if (path === endpoint + "/pedido" && ["GET", "POST"].includes(req.method)) {
+    if (path === endpoint + "/pedido" && ["GET", "POST", "PUT"].includes(req.method)) {
       const token = /^Bearer ([a-f0-9-]{36})\.([a-f0-9]{64})$/.exec(req.headers.authorization || "");
       if (!token) {
         send(404, { error: "Pedido não encontrado." });
@@ -162,11 +162,16 @@ export function createCheckout({ db, body, hash, encryptKey, decryptKey, payment
       }
 
       if (order.payment_method === "manual") {
-        if (req.method === "POST") {
-          const { image, mime } = await readReceipt(req);
+        if (req.method === "POST" || req.method === "PUT") {
+          const fallback = req.method === "PUT";
+          if (fallback && (!reseller || !order.buyer_name)) {
+            send(405, { error: "Operação disponível apenas para revenda." });
+            return true;
+          }
+          const receipt = fallback ? null : await readReceipt(req);
           try {
             await db("zentrix_pix_receipts", "POST", {
-              order_id: id, image_hash: hash(image), image: image.toString("base64"), mime
+              order_id: id, ...(receipt ? { image_hash: hash(receipt.image), image: receipt.image.toString("base64"), mime: receipt.mime } : {})
             });
             send(201, { status: "review" });
           } catch (error) {

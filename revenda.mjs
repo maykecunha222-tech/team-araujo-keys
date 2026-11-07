@@ -25,7 +25,7 @@ export function createResellerPanel({ db, body, hash, decryptKey, isAdmin }) {
         "Content-Type": type + "; charset=utf-8",
         "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff",
-        "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
+        "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; img-src data: blob:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
       });
       res.end(content);
       return true;

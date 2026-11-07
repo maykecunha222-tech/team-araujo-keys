@@ -16,7 +16,9 @@ async function loadReceipts() {
       order.hours / 24 + " dias · " + formatDate(receipt.created_at);
     if (order.buyer_name) info.textContent += " · " + order.buyer_name;
     const reference = document.createElement("p");
-    reference.textContent = "Referência do Pix: " + receipt.reference;
+    reference.textContent = receipt.mime
+      ? "Referência do Pix: " + receipt.reference
+      : "Imagem indisponível · ID do pedido: " + receipt.order_id;
     const review = document.createElement("button");
     review.className = "small secondary";
     review.type = "button";
@@ -60,7 +62,7 @@ async function loadReceipts() {
         id.required = true;
         help.append(id);
         const approve = document.createElement("button");
-        approve.textContent = "Confirmar crédito e liberar key";
+        approve.textContent = order.reseller_id ? "Marcar como conferido" : "Confirmar crédito e liberar key";
         const reject = document.createElement("button");
         reject.type = "button";
         reject.className = "small danger";
@@ -86,7 +88,8 @@ async function loadReceipts() {
         reject.onclick = () => {
           if (confirm("Recusar este comprovante?")) decide("reject");
         };
-        row.append(preview, form);
+        if (image) row.append(preview);
+        row.append(form);
         review.remove();
       } catch (error) {
         message(error.message);

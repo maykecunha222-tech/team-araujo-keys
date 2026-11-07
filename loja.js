@@ -138,22 +138,80 @@ element("reset").addEventListener("click", () => {
   status.textContent = "";
 });
 
+const receiptLimit = 2 * 1024 * 1024;
+
+async function convertReceipt(file) {
+  if (file.size > 25 * 1024 * 1024) {
+    throw new Error("A foto é muito grande. Tire um print do comprovante e tente de novo.");
+  }
+  const image = new Image();
+  const url = URL.createObjectURL(file);
+  try {
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = () => reject(new Error("O navegador não abriu essa foto. Tire um print do comprovante e envie o print."));
+      image.src = url;
+    });
+    const width = image.naturalWidth;
+    const height = image.naturalHeight;
+    if (Math.min(width, height) < 64) {
+      throw new Error("A imagem é muito pequena. Envie um print completo do comprovante.");
+    }
+    const scale = Math.min(1, 2200 / Math.max(width, height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(64, Math.round(width * scale));
+    canvas.height = Math.max(64, Math.round(height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Não foi possível preparar a foto. Envie um print do comprovante.");
+    context.fillStyle = "#fff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    for (const quality of [0.88, 0.72, 0.56]) {
+      const jpeg = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", quality));
+      if (jpeg?.type === "image/jpeg" && jpeg.size <= receiptLimit) return jpeg;
+    }
+    throw new Error("Não foi possível reduzir a foto para até 2 MB. Envie um print do comprovante.");
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function uploadReceipt(image) {
+  const upload = body => request(endpoint + "/pedido", {
+    method: "POST", headers: { Authorization: "Bearer " + order.order, "Content-Type": "application/octet-stream" },
+    body
+  });
+  if (image.size <= receiptLimit && ["image/png", "image/jpeg"].includes(image.type)) {
+    try {
+      return await upload(image);
+    } catch (error) {
+      if (error.status !== 400 && error.status !== 413) throw error;
+    }
+  }
+  try {
+    const prepared = await convertReceipt(image).catch(error => {
+      throw Object.assign(error, { receiptConversion: true });
+    });
+    return await upload(prepared);
+  } catch (error) {
+    if (!resellerAccess || (!error.receiptConversion && ![400, 413].includes(error.status))) throw error;
+    return request(endpoint + "/pedido", {
+      method: "PUT", headers: { Authorization: "Bearer " + order.order }
+    });
+  }
+}
+
 element("receipt-form").onsubmit = async event => {
   event.preventDefault();
   const button = event.submitter;
   const image = element("receipt-image").files[0];
   if (!image) return;
   element("receipt-error").textContent = "";
-  if (image.size > 2 * 1024 * 1024) {
-    element("receipt-error").textContent = "A imagem deve ter até 2 MB.";
-    return;
-  }
   button.disabled = true;
+  const label = button.textContent;
+  button.textContent = "Preparando e enviando…";
   try {
-    await request(endpoint + "/pedido", {
-      method: "POST", headers: { Authorization: "Bearer " + order.order, "Content-Type": "application/octet-stream" },
-      body: image
-    });
+    await uploadReceipt(image);
     event.target.reset();
     element("receipt-form").hidden = true;
     checkPayment();
@@ -162,6 +220,7 @@ element("receipt-form").onsubmit = async event => {
     if (error.status === 409) checkPayment();
   } finally {
     button.disabled = false;
+    button.textContent = label;
   }
 };
 
