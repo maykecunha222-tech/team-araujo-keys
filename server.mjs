@@ -10,6 +10,7 @@ import { createManualPix, createReceiptAdmin } from "./pix-manual.mjs";
 const guideAssets = new Map([
   ["/guia/", ["guia.html", "text/html; charset=utf-8"]],
   ["/lisboa/", ["lisboa.html", "text/html; charset=utf-8"]],
+  ["/thamy/", ["thamy.html", "text/html; charset=utf-8"]],
   ["/guia/style.css", ["style.css", "text/css; charset=utf-8"]],
   ["/guia/videos.js", ["videos.js", "text/javascript; charset=utf-8"]],
   ["/guia/escudo.png", ["escudo.png", "image/png"]],
@@ -99,7 +100,7 @@ export function makeServer({ supabaseUrl, secretKey, adminToken, encryptionSecre
       if (await resellerPanel(req, res, path, send)) return;
       if (await checkout(req, res, path, send)) return;
       if (await iphone(req, res, path)) return;
-      if (req.method === "GET" && (path === "/guia" || path === "/lisboa")) {
+      if (req.method === "GET" && (path === "/guia" || path === "/lisboa" || path === "/thamy")) {
         res.writeHead(302, { Location: path + "/" });
         return res.end();
       }
